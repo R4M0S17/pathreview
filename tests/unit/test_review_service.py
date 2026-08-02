@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import pytest
 
+from core.models.review_share import ReviewShare
 from core.services.review_service import (
     create_review,
     create_share_token,
@@ -83,7 +84,7 @@ class TestReviewService:
         mock_review.id = review_id
 
         # Setup mock execute to return review
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.first.return_value = mock_review
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -99,7 +100,7 @@ class TestReviewService:
         wrong_user_id = uuid4()
 
         # Setup mock to return None
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.first.return_value = None
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -116,7 +117,7 @@ class TestReviewService:
         mock_reviews = [Mock() for _ in range(5)]
 
         # Setup execute mock to return reviews
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = mock_reviews
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -133,7 +134,7 @@ class TestReviewService:
         page_size = 20
 
         # Setup mock
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -149,7 +150,7 @@ class TestReviewService:
         """Test list_reviews returns (reviews, total) tuple."""
         user_id = uuid4()
 
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -200,7 +201,7 @@ class TestReviewService:
         review_id = uuid4()
         user_id = uuid4()
 
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.first.return_value = None
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -214,7 +215,7 @@ class TestReviewService:
         """Test list_reviews uses default pagination."""
         user_id = uuid4()
 
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -230,7 +231,7 @@ class TestReviewService:
         user_id = uuid4()
         custom_page_size = 50
 
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -260,7 +261,7 @@ class TestReviewService:
         review_id = uuid4()
         user_id = uuid4()
 
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.first.return_value = None
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -275,7 +276,7 @@ class TestReviewService:
         user_id = uuid4()
 
         mock_reviews = [Mock() for _ in range(5)]
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = mock_reviews
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -290,7 +291,7 @@ class TestReviewService:
         user_id = uuid4()
 
         mock_reviews = [Mock(spec=["id", "status"]) for _ in range(3)]
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = mock_reviews
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -318,7 +319,7 @@ class TestReviewService:
         review_id = uuid4()
         user_id = uuid4()
 
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.first.return_value = None
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -332,14 +333,15 @@ class TestReviewService:
         """Test list_reviews returns results ordered by created_at desc."""
         user_id = uuid4()
 
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
         reviews, total = await list_reviews(mock_db_session, user_id)
 
-        # Should order by created_at descending
-        mock_db_session.execute.assert_called_once()
+        # Should order by created_at descending (list_reviews issues a count
+        # query plus a select query, so execute is called more than once)
+        mock_db_session.execute.assert_called()
 
     @pytest.mark.asyncio
     async def test_create_share_token_creates_token_when_none_exists(self, mock_db_session):
@@ -352,31 +354,32 @@ class TestReviewService:
         complete_review.status = "complete"
 
         # Mock execute to return None (no existing token)
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.first.return_value = None
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
-        with (
-            patch(
-                "core.services.review_service.get_review", return_value=complete_review
-            ) as mock_get,
-            patch("core.services.review_service.ReviewShare") as mock_share_cls,
-        ):
-            mock_share_instance = Mock()
-            mock_share_instance.share_token = "test_token"
-            mock_share_instance.expires_at = datetime.utcnow() + timedelta(days=30)
-            mock_share_cls.return_value = mock_share_instance
+        # db.refresh() is what would populate server/default-generated
+        # columns (share_token, expires_at) after a real commit/flush.
+        async def fake_refresh(obj):
+            obj.share_token = "test_token"
 
+        mock_db_session.refresh = AsyncMock(side_effect=fake_refresh)
+
+        with patch(
+            "core.services.review_service.get_review", return_value=complete_review
+        ) as mock_get:
             result = await create_share_token(mock_db_session, review_id, user_id)
 
-            # Should call get_review with correct params
-            mock_get.assert_called_once_with(
-                db=mock_db_session, review_id=review_id, user_id=user_id
-            )
-            # Should create ReviewShare
-            mock_share_cls.assert_called_once()
-            # Should return the share
-            assert result == mock_share_instance
+        # Should call get_review with correct params
+        mock_get.assert_called_once_with(db=mock_db_session, review_id=review_id, user_id=user_id)
+        # Should create and persist a new ReviewShare
+        mock_db_session.add.assert_called_once()
+        added_share = mock_db_session.add.call_args[0][0]
+        assert isinstance(added_share, ReviewShare)
+        assert str(added_share.review_id) == str(review_id)
+        # Should return the persisted share
+        assert result is added_share
+        assert result.share_token == "test_token"
 
     @pytest.mark.asyncio
     async def test_create_share_token_reuses_unexpired_token(self, mock_db_session):
@@ -393,7 +396,7 @@ class TestReviewService:
         mock_share.share_token = "existing_token"
         mock_share.expires_at = datetime.utcnow() + timedelta(days=15)
 
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.first.return_value = mock_share
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -442,7 +445,7 @@ class TestReviewService:
         # Mock execute to return a review
         mock_review = Mock()
         mock_review.id = uuid4()
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.first.return_value = mock_review
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -458,7 +461,7 @@ class TestReviewService:
         share_token = "expired_token"
 
         # Mock execute to return None (expired)
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.first.return_value = None
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
@@ -473,7 +476,7 @@ class TestReviewService:
         share_token = "unknown_token"
 
         # Mock execute to return None (not found)
-        mock_result = AsyncMock()
+        mock_result = Mock()
         mock_result.scalars.return_value.first.return_value = None
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
