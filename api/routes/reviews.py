@@ -2,6 +2,7 @@ from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.middleware.auth import get_current_user
 from api.schemas.review import (
@@ -147,9 +148,9 @@ async def list_reviews_endpoint(
 @router.post("/{review_id}/share", response_model=ShareCreateResponse)
 async def create_share_endpoint(
     review_id: UUID,
-    current_user: User = Depends(get_current_user),
-    db=Depends(get_db),
-):
+    current_user: User = Depends(get_current_user),  # noqa: B008
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> ShareCreateResponse:
     """
     Create a public share link for a review.
     Only works for reviews owned by the current user and in 'complete' status.
@@ -179,14 +180,14 @@ async def create_share_endpoint(
         log.error("create_share_error", error=str(exc))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create share link"
-        )
+        ) from exc
 
 
 @router.get("/shared/{share_token}", response_model=SharedReviewResponse)
 async def get_shared_review_endpoint(
     share_token: str,
-    db=Depends(get_db),
-):
+    db: AsyncSession = Depends(get_db),  # noqa: B008
+) -> SharedReviewResponse:
     """
     Get a shared review via public share token.
     No authentication required. Returns 404 for unknown or expired tokens.
@@ -199,7 +200,7 @@ async def get_shared_review_endpoint(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Share link not found"
             )
 
-        return SharedReviewResponse.model_validate(review)
+        return SharedReviewResponse.model_validate(review)  # type: ignore[no-any-return]
     except HTTPException:
         raise
     except Exception as exc:
@@ -207,7 +208,7 @@ async def get_shared_review_endpoint(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to load shared review",
-        )
+        ) from exc
 
 
 @router.get("/{review_id}/status")

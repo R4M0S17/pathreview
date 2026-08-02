@@ -60,17 +60,17 @@ class TestReviewService:
         mock_db_session.commit = AsyncMock()
         mock_db_session.refresh = AsyncMock()
 
-        with patch("core.services.review_service.Review") as MockReview:
-            mock_instance = MockReview.return_value
+        with patch("core.services.review_service.Review") as mock_review_cls:
+            mock_instance = mock_review_cls.return_value
             mock_instance.status = "pending"
             mock_instance.sections = None
             mock_instance.overall_score = None
 
-            result = await create_review(mock_db_session, profile_id, user_id)
+            await create_review(mock_db_session, profile_id, user_id)
 
             # Check that Review was instantiated
-            MockReview.assert_called()
-            call_kwargs = MockReview.call_args[1]
+            mock_review_cls.assert_called()
+            call_kwargs = mock_review_cls.call_args[1]
             assert call_kwargs["status"] == "pending"
 
     @pytest.mark.asyncio
@@ -96,7 +96,6 @@ class TestReviewService:
     async def test_get_review_returns_none_for_wrong_user(self, mock_db_session):
         """Test get_review returns None when user_id doesn't match."""
         review_id = uuid4()
-        user_id = uuid4()
         wrong_user_id = uuid4()
 
         # Setup mock to return None
@@ -247,11 +246,11 @@ class TestReviewService:
         profile_id = uuid4()
         user_id = uuid4()
 
-        with patch("core.services.review_service.Review") as MockReview:
-            MockReview.return_value = Mock()
+        with patch("core.services.review_service.Review") as mock_review_cls:
+            mock_review_cls.return_value = Mock()
             await create_review(mock_db_session, profile_id, user_id)
 
-            call_kwargs = MockReview.call_args[1]
+            call_kwargs = mock_review_cls.call_args[1]
             assert "profile_id" in call_kwargs
             assert "status" in call_kwargs
 
@@ -305,11 +304,11 @@ class TestReviewService:
         profile_id = uuid4()
         user_id = uuid4()
 
-        with patch("core.services.review_service.Review") as MockReview:
-            MockReview.return_value = Mock()
+        with patch("core.services.review_service.Review") as mock_review_cls:
+            mock_review_cls.return_value = Mock()
             await create_review(mock_db_session, profile_id, user_id)
 
-            call_kwargs = MockReview.call_args[1]
+            call_kwargs = mock_review_cls.call_args[1]
             assert call_kwargs["sections"] is None
             assert call_kwargs["overall_score"] is None
 
@@ -357,25 +356,27 @@ class TestReviewService:
         mock_result.scalars.return_value.first.return_value = None
         mock_db_session.execute = AsyncMock(return_value=mock_result)
 
-        with patch(
-            "core.services.review_service.get_review", return_value=complete_review
-        ) as mock_get:
-            with patch("core.services.review_service.ReviewShare") as MockShare:
-                mock_share_instance = Mock()
-                mock_share_instance.share_token = "test_token"
-                mock_share_instance.expires_at = datetime.utcnow() + timedelta(days=30)
-                MockShare.return_value = mock_share_instance
+        with (
+            patch(
+                "core.services.review_service.get_review", return_value=complete_review
+            ) as mock_get,
+            patch("core.services.review_service.ReviewShare") as mock_share_cls,
+        ):
+            mock_share_instance = Mock()
+            mock_share_instance.share_token = "test_token"
+            mock_share_instance.expires_at = datetime.utcnow() + timedelta(days=30)
+            mock_share_cls.return_value = mock_share_instance
 
-                result = await create_share_token(mock_db_session, review_id, user_id)
+            result = await create_share_token(mock_db_session, review_id, user_id)
 
-                # Should call get_review with correct params
-                mock_get.assert_called_once_with(
-                    db=mock_db_session, review_id=review_id, user_id=user_id
-                )
-                # Should create ReviewShare
-                MockShare.assert_called_once()
-                # Should return the share
-                assert result == mock_share_instance
+            # Should call get_review with correct params
+            mock_get.assert_called_once_with(
+                db=mock_db_session, review_id=review_id, user_id=user_id
+            )
+            # Should create ReviewShare
+            mock_share_cls.assert_called_once()
+            # Should return the share
+            assert result == mock_share_instance
 
     @pytest.mark.asyncio
     async def test_create_share_token_reuses_unexpired_token(self, mock_db_session):

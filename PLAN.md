@@ -37,6 +37,8 @@
 4. **Public view:** Add `SharedReviewPage.tsx` + unauthenticated route to render the shared, read-only payload (no Share/Export buttons, no nav requiring auth).
 5. **Verify end-to-end:** Manually reproduce the original bug is fixed — generate a link, open in incognito, confirm it loads without login; confirm an expired/invalid token returns a clear error instead of a login redirect.
 
+**Detailed, step-by-step build order (data layer → routes → frontend → verification, one commit per step) lives in [IMPLEMENTATION_STEPS.md](IMPLEMENTATION_STEPS.md).** This section stays as the high-level plan; that file is the executable roadmap this plan was carried out with, including the checkpoint and commit for each step.
+
 ## 4. Inputs & outputs
 
 **`POST /reviews/{review_id}/share`** (authenticated)

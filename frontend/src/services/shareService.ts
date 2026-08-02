@@ -1,3 +1,4 @@
+import { SharedReview } from '../types'
 import { apiClient } from './api'
 
 export async function generateShareLink(reviewId: string): Promise<{ shareUrl: string; expiresAt: string }> {
@@ -8,6 +9,6 @@ export async function generateShareLink(reviewId: string): Promise<{ shareUrl: s
   }
 }
 
-export async function getSharedReview(token: string) {
+export async function getSharedReview(token: string): Promise<SharedReview> {
   return apiClient.getSharedReview(token)
 }

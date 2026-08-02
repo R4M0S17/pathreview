@@ -27,13 +27,11 @@ class ReviewShare(Base):
         UUID(as_uuid=False),
         ForeignKey("reviews.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     share_token: Mapped[str] = mapped_column(
         String(64),
         unique=True,
         nullable=False,
-        index=True,
         default=lambda: secrets.token_urlsafe(32),
     )
     created_at: Mapped[datetime] = mapped_column(

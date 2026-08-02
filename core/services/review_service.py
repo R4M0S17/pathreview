@@ -48,7 +48,7 @@ async def get_review(
         select(Review).join(Profile).where(and_(Review.id == review_id, Profile.user_id == user_id))
     )
     result = await db.execute(stmt)
-    return cast(Review | None, result.scalars().first())
+    return cast("Review | None", result.scalars().first())
 
 
 async def list_reviews(
@@ -215,7 +215,7 @@ async def create_share_token(
         and_(ReviewShare.review_id == str(review_id), ReviewShare.expires_at > now)
     )
     result = await db.execute(stmt)
-    existing = cast(ReviewShare | None, result.scalars().first())
+    existing = cast("ReviewShare | None", result.scalars().first())
     if existing:
         return existing
 
@@ -241,7 +241,7 @@ async def get_review_by_share_token(db: AsyncSession, share_token: str) -> Revie
         .where(and_(ReviewShare.share_token == share_token, ReviewShare.expires_at > now))
     )
     result = await db.execute(stmt)
-    return cast(Review | None, result.scalars().first())
+    return cast("Review | None", result.scalars().first())
 
 
 async def _run_ingestion_pipeline(db: AsyncSession, profile: Profile) -> list[dict]:
