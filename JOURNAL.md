@@ -18,12 +18,12 @@ I selected this issue because it is a Tier 2 challenge that perfectly aligns wit
 
 ## Week 8 — Reproduction & solution planning
 
-### Reproduction summary
-Confirmed the issue by clicking "Share" on ReviewPage.tsx, which copies the current authenticated URL (`/reviews/{reviewId}`). When pasting this link in incognito mode, the app redirects to the login window instead of displaying the review—validating that no public-facing endpoint exists and all review routes require authentication. The backend lacks both a token generation endpoint (`POST /reviews/{reviewId}/generate-share`) and a public view endpoint (`GET /reviews/shared/{shareToken}`) needed for 30-day expiring shareable links.
+**Reproduction commit link:** [To be added after Week 9 implementation]
 
-### Solution approach
-- Create a `ReviewShare` database model with `share_token`, `review_id`, `created_at`, and `expires_at` fields
-- Implement backend endpoints: token generation (authenticated) and public retrieval (unauthenticated with token validation)
-- Build `shareService.ts` to call the token generation API
-- Update `ReviewPage.tsx` to call the service instead of copying the URL
-- Add a new public route (`/shared-review/{token}`) for viewing shared reviews
+**Reproduction summary:**
+Confirmed the issue by clicking "Share" on ReviewPage.tsx, which copies the current authenticated URL (`/reviews/{reviewId}`). When pasting this link in incognito mode, the app redirects to the login window instead of displaying the review—validating that no public-facing endpoint exists and all review routes require authentication.
+
+**PLAN.md link:** [PLAN.md](PLAN.md)
+
+**Blockers or open questions:**
+None. All technical dependencies identified and mapped in PLAN.md; ready to begin Week 9 implementation starting with the data layer (`ReviewShare` model + migration).
