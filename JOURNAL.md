@@ -34,6 +34,8 @@ None. All technical dependencies identified and mapped in PLAN.md; ready to begi
 
 **PR link:** https://github.com/ascherj/pathreview/pull/470
 
+**Branch:** feat/101-copy-link-public-review-summary
+
 **What was built:** Implemented a token-based public share-link system — a new `ReviewShare` model, a `POST /reviews/{review_id}/share` endpoint that mints a cryptographically random, 30-day-expiring token, and a public `GET /reviews/shared/{share_token}` endpoint plus `/shared-review/:token` frontend route that render a sanitized, read-only review summary with no login required.
 
 **Tests:** Added tests in `tests/unit/test_review_service.py` covering share-token creation, token reuse on repeat `POST` calls (returns the same unexpired token instead of minting a new one), ownership enforcement (404 for non-owners attempting to share someone else's review), and expired/invalid token lookups (both return a generic 404).
