@@ -443,7 +443,7 @@ Replaces copying the login-gated window.location.href with a
 
 ---
 
-## Step 10 — `SharedReviewPage.tsx` (new, read-only public view)
+## Step 10 — `SharedReviewPage.tsx` (new, read-only public view) ✅ DONE
 
 **File:** `frontend/src/pages/SharedReviewPage.tsx` (new)
 
@@ -498,7 +498,7 @@ in issue #101."
 
 ---
 
-## Step 11 — Route registration
+## Step 11 — Route registration ✅ DONE
 
 **File:** `frontend/src/App.tsx`
 
