@@ -201,10 +201,19 @@ async def process_review(
 async def create_share_token(
     db: AsyncSession, review_id: UUID, user_id: UUID
 ) -> ReviewShare | None:
-    """
-    Create or reuse a share token for a review.
-    Returns None if the review doesn't exist, isn't owned by user_id, or isn't complete.
-    Reuses an existing unexpired token if one exists (PLAN.md: avoid link-churn).
+    """Create or reuse a public share token for a review.
+
+    Reuses an existing unexpired token if one exists, to avoid link-churn
+    for users who click "Share" more than once (see PLAN.md).
+
+    Args:
+        db: Active async database session.
+        review_id: ID of the review to share.
+        user_id: ID of the user requesting the share link; must own the review.
+
+    Returns:
+        The ReviewShare (new or reused), or None if the review doesn't exist,
+        isn't owned by user_id, or isn't in "complete" status.
     """
     review = await get_review(db=db, review_id=review_id, user_id=user_id)
     if not review or review.status != "complete":
@@ -230,9 +239,15 @@ async def create_share_token(
 
 
 async def get_review_by_share_token(db: AsyncSession, share_token: str) -> Review | None:
-    """
-    Get a review via its share token. Returns None if token is unknown or expired.
-    Caller (route) is responsible for turning None into 404.
+    """Look up a review via its public share token.
+
+    Args:
+        db: Active async database session.
+        share_token: The share token from the public URL.
+
+    Returns:
+        The associated Review, or None if the token is unknown or expired.
+        The caller (route handler) is responsible for turning None into a 404.
     """
     now = datetime.utcnow()
     stmt = (
