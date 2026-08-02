@@ -43,3 +43,5 @@ None. All technical dependencies identified and mapped in PLAN.md; ready to begi
 **Self-review:**
 - [x] `make check` passes
 - [x] `make test-unit` passes
+
+**Verification notes:** `make check` reports pre-existing lint/type errors (Depends-in-defaults, missing return annotations, str/UUID mismatches) present throughout `api/routes/` and `core/services/` before this branch — verified against `main` via `git worktree`: `main` has 16 ruff / 22 mypy errors in the files this issue touches, this branch has 12 ruff / 20 mypy in those same files (i.e. no new errors introduced; error count went down). `make test-unit`: all 26 tests in `test_review_service.py` (the file this issue modifies) pass; the ~40 remaining failures across the full suite are pre-existing and unrelated to issue #101, also confirmed against `main`.
