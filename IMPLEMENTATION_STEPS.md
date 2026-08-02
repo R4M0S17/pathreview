@@ -371,7 +371,7 @@ git commit -m "feat: add createShareLink and getSharedReview to ApiClient"
 
 ---
 
-## Step 8 — `shareService.ts` (thin wrapper, per PLAN.md §2/§4)
+## Step 8 — `shareService.ts` (thin wrapper, per PLAN.md §2/§4) ✅ DONE
 
 **File:** `frontend/src/services/shareService.ts` (new)
 
@@ -405,7 +405,7 @@ git commit -m "feat: add shareService wrapping share-link generation and fetch"
 
 ---
 
-## Step 9 — Update `ReviewPage.tsx`
+## Step 9 — Update `ReviewPage.tsx` ✅ DONE
 
 **File:** `frontend/src/pages/ReviewPage.tsx`
 
