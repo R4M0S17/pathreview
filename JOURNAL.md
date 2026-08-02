@@ -18,7 +18,7 @@ I selected this issue because it is a Tier 2 challenge that perfectly aligns wit
 
 ## Check-in 1: Week 8 — Reproduction & solution planning
 
-**Reproduction commit link:** [To be added after Week 9 implementation]
+**Reproduction commit link:** N/A — reproduction was manual (see summary below); no reproduction test/commit was created separately from the Week 9 implementation in [PR #470](https://github.com/ascherj/pathreview/pull/470).
 
 **Reproduction summary:**
 Confirmed the issue by clicking "Share" on ReviewPage.tsx, which copies the current authenticated URL (`/reviews/{reviewId}`). When pasting this link in incognito mode, the app redirects to the login window instead of displaying the review—validating that no public-facing endpoint exists and all review routes require authentication.
